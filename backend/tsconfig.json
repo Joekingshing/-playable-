@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@backend/config": ["libs/config/src"],
+      "@backend/config/*": ["libs/config/src/*"],
+      "@backend/logger": ["libs/logger/src"],
+      "@backend/logger/*": ["libs/logger/src/*"],
+      "@backend/database": ["libs/database/src"],
+      "@backend/database/*": ["libs/database/src/*"],
+      "@backend/clients": ["libs/clients/src"],
+      "@backend/clients/*": ["libs/clients/src/*"],
+      "@backend/common": ["libs/common/src"],
+      "@backend/common/*": ["libs/common/src/*"]
+    },
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

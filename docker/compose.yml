@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    profiles: ["db"]
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypass
+      POSTGRES_DB: myapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    profiles: ["infra"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+  backend-api:
+    build:
+      context: ../backend
+    profiles: ["app"]
+    command: pnpm start:prod api
+    env_file:
+      - ../.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  backend-worker:
+    build:
+      context: ../backend
+    profiles: ["app"]
+    command: pnpm start:prod worker
+    env_file:
+      - ../.env
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ../frontend
+    profiles: ["app"]
+    command: pnpm preview --host 0.0.0.0 --port 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-api
+
+volumes:
+  db_data:
