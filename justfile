@@ -1,4 +1,4 @@
-set shell := ["bash", "-cu"]
+set shell := ["cmd.exe", "/c"]
 set dotenv-load := true
 
 # -----------------------------
@@ -45,8 +45,7 @@ backend-build app="api":
     cd backend && pnpm build {{app}}
 
 backend-debug app="api":
-    export NODE_OPTIONS="--inspect=0.0.0.0:9229" ; \
-    cd backend && pnpm start:dev {{app}}
+    set NODE_OPTIONS=--inspect=0.0.0.0:9229 && cd backend && pnpm start:dev {{app}}
 
 # -----------------------------
 # Frontend (Vite)
@@ -62,14 +61,8 @@ frontend-build:
 # -----------------------------
 # app: api / worker / admin
 
-dev app="api":
-    trap 'kill 0' INT TERM EXIT
-    just up-db
-    (just backend-dev app={{app}}) &
-    backend_pid=$!
-    (just frontend-dev) &
-    frontend_pid=$!
-    wait  
+dev app="api" duration="0":
+    powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts\dev.ps1 -App {{app}} -DurationSeconds {{duration}}
 
 # -----------------------------
 # Database (Prisma example)
