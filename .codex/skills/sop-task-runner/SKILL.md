@@ -7,8 +7,8 @@ license: MIT
 compatibility:
   required:
     - git>=2.35
-    - bash
-    - unix-like shell environment
+    - powershell>=5.1
+    - windows
   assumes:
     - repository has branch: spike/fullstack
     - worktree root is: ../_wt/
@@ -67,6 +67,7 @@ metadata:
 > 每个步骤都明确标注**在哪里执行**：
 > - **控制台目录（Console Workspace）**：repo root
 > - **任务 Worktree（Dev Worktree）**：`../_wt/<branch>`
+> - 本文档命令示例为 PowerShell 版本（Windows）；如在其他 shell 使用，请按等价命令替换。
 
 ## 0) 预检（控制台目录执行）
 
@@ -74,13 +75,13 @@ metadata:
 
 2) 切到唯一集成基线：
 
-```bash
+```powershell
 git switch spike/fullstack
-````
+```
 
 3. 确保控制台目录 clean（硬门槛）：
 
-```bash
+```powershell
 git status
 ```
 
@@ -88,7 +89,7 @@ git status
 
 4. 查看 worktree 列表（防撞）：
 
-```bash
+```powershell
 git worktree list
 ```
 
@@ -115,18 +116,18 @@ git worktree list
 
 ## 2) 创建任务 worktree（控制台目录执行）
 
-```bash
-BR=fix/T123-upload-retry
-WT=../_wt/${BR//\//-}
+```powershell
+$BR = "fix/T123-upload-retry"
+$WT = Join-Path "..\_wt" ($BR -replace "/", "-")
 
 # 硬门槛：控制台必须 clean
 git status
 
 # 只允许从 spike/fullstack 拉分支创建 worktree
-git worktree add -b "$BR" "$WT" spike/fullstack
+git worktree add -b $BR $WT spike/fullstack
 
-# 进入 worktree 开发
-cd "$WT"
+# 进入 worktree 开发（示例：显式指定工作目录）
+# git -C $WT status
 ```
 * **进入 worktree 后必须校验分支**：执行 `git branch --show-current`，结果必须等于 `$BR`。
 * **硬门槛**：若当前目录不等于 `$WT` **或** 当前分支不等于 `$BR`，则立刻停止执行（退出/报错），**禁止进入下一步**。
@@ -165,7 +166,7 @@ cd "$WT"
 
 ## 5) 实现（在任务 worktree 执行，小步提交）
 
-```bash
+```powershell
 git status
 # 修改代码/文档
 git add -A
@@ -184,7 +185,7 @@ git commit -m "fix: xxx"
 
 按输入的“验证方式”执行（示例）：
 
-```bash
+```powershell
 # pnpm test
 # pnpm lint
 # pnpm build
@@ -202,13 +203,15 @@ git commit -m "fix: xxx"
 
 ## 7) 生成本地 PR 审阅单（必须在任务 worktree 执行）
 
-```bash
-BR=${BR:-$(git branch --show-current)}
+```powershell
+if (-not $BR) {
+  $BR = git branch --show-current
+}
 
-mkdir -p docs/pr
-PR_NOTE=docs/pr/$(date +%Y%m%d)-${BR//\//-}.md
+New-Item -ItemType Directory -Path "docs/pr" -Force | Out-Null
+$PR_NOTE = "docs/pr/{0}-{1}.md" -f (Get-Date -Format "yyyyMMdd"), ($BR -replace "/", "-")
 
-cat > "$PR_NOTE" <<EOF
+@"
 # PR: $BR
 
 ## 背景 / 目标
@@ -227,13 +230,13 @@ cat > "$PR_NOTE" <<EOF
 -
 
 ## 关键 Diff（自检）
-EOF
+"@ | Set-Content -Path $PR_NOTE
 
-git --no-pager log --oneline --decorate -n 20 >> "$PR_NOTE"
-printf "\n## Diff (spike/fullstack...HEAD)\n\n" >> "$PR_NOTE"
-git --no-pager diff --stat spike/fullstack...HEAD >> "$PR_NOTE"
+git --no-pager log --oneline --decorate -n 20 | Add-Content -Path $PR_NOTE
+Add-Content -Path $PR_NOTE -Value "`n## Diff (spike/fullstack...HEAD)`n"
+git --no-pager diff --stat spike/fullstack...HEAD | Add-Content -Path $PR_NOTE
 
-git add "$PR_NOTE"
+git add $PR_NOTE
 git commit -m "chore: add PR note"
 ```
 
@@ -246,7 +249,7 @@ git commit -m "chore: add PR note"
 
 ## 8) 合并前同步基线，消灭冲突（在任务 worktree 执行）
 
-```bash
+```powershell
 git fetch --all --prune
 git merge spike/fullstack
 # 如有冲突：在 worktree 中解决 → add → commit
@@ -260,8 +263,8 @@ git merge spike/fullstack
 
 回到 repo root（控制台目录）：
 
-```bash
-cd -  # 或手动回到 repo root
+```powershell
+# 回到 repo root（控制台目录）后执行
 git switch spike/fullstack
 
 # 硬门槛：控制台必须 clean
@@ -280,12 +283,12 @@ git status
 
 ## 10) 清理 worktree（控制台目录执行）
 
-```bash
-WT=../_wt/${BR//\//-}
+```powershell
+$WT = Join-Path "..\_wt" ($BR -replace "/", "-")
 
-git worktree remove "$WT"
+git worktree remove $WT
 git worktree prune
-git branch -d "$BR"
+git branch -d $BR
 ```
 
 ---
@@ -294,14 +297,14 @@ git branch -d "$BR"
 
 只允许为“恢复 clean”而在控制台执行 `stash` / `clean`：
 
-```bash
+```powershell
 git stash push -u -m "console-dirty: <原因简述>"
 git status
 ```
 
 若仍不 clean 且确定剩余是可删 ignored 产物：
 
-```bash
+```powershell
 git clean -fdX
 git status
 ```
@@ -317,12 +320,12 @@ git status
 
 1. **凡是会动文件/目录的命令**（新增/修改/删除/拷贝/移动/生成产物/安装依赖/格式化/codegen/构建/测试写缓存等），**必须显式作用在 `$WT`**：
 
-* 文件路径必须以 `"$WT/"` 开头（如 `mkdir -p "$WT/src/foo"`、`cp a "$WT/..."`）。
-* 或命令显式在 `$WT` 目录执行：`git -C "$WT" ...` / `(cd "$WT" && <cmd>)`。
+* 文件路径必须以 `$WT` 开头（如 `New-Item -ItemType Directory -Path "$WT\src\foo" -Force`、`Copy-Item a "$WT\..."`）。
+* 或命令显式在 `$WT` 目录执行：`git -C "$WT" ...` / `& { Set-Location -Path $WT; <cmd> }`。
 
 2. **Git 操作统一写法**：除“合并回 spike/fullstack / 清理 worktree”外，全部用：
 
-```bash
+```powershell
 git -C "$WT" <subcommand>
 ```
 
