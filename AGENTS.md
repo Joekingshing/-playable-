@@ -264,3 +264,8 @@ psql "$DATABASE_URL" -c "SELECT * FROM projects LIMIT 10;"
 3) 有前端/后端改动则必须附构建校验：
    - `(cd "$WT/apps/editor" && pnpm build)` 或/且 `(cd "$WT/apps/server" && pnpm build)`
 4) 涉及模板 / codegen / 导出流程：必须跑一次导出冒烟并记录结果
+
+
+## 14. 启动前后端的端口释放要求
+
+- 启动前后端服务前，若端口已被占用，必须先关闭占用进程，再启动对应服务。
