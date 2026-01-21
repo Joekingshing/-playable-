@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { fetchUsers } from './api/users';
 import type { User } from './api/users';
 import { downloadExportZip } from './api/export';
+import { uploadImage } from './api/upload';
 import './App.css';
 
 type LoadState = 'loading' | 'ready' | 'error';
@@ -19,7 +20,7 @@ function App() {
   const [uploadFilename, setUploadFilename] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const readerRef = useRef<FileReader | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleExport = async () => {
     if (exporting) {
@@ -37,13 +38,15 @@ function App() {
   };
 
   const resetUploadState = () => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
     setUploadState('idle');
     setUploadProgress(0);
     setUploadMessage('');
     setUploadFilename('');
   };
 
-  const handleFile = (file: File | undefined) => {
+  const handleFile = async (file: File | undefined) => {
     if (!file) {
       return;
     }
@@ -56,32 +59,32 @@ function App() {
       return;
     }
 
-    readerRef.current?.abort();
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setUploadState('uploading');
     setUploadProgress(0);
     setUploadFilename(file.name);
     setUploadMessage('');
 
-    const reader = new FileReader();
-    readerRef.current = reader;
-    reader.onprogress = (event) => {
-      if (!event.lengthComputable) {
-        return;
-      }
-      const nextValue = Math.round((event.loaded / event.total) * 100);
-      setUploadProgress(nextValue);
-    };
-    reader.onload = () => {
+    try {
+      const result = await uploadImage(file, {
+        signal: controller.signal,
+        onProgress: (percent) => setUploadProgress(percent),
+      });
       setUploadProgress(100);
       setUploadState('success');
-      setUploadMessage('上传成功');
-    };
-    reader.onerror = () => {
+      setUploadFilename(result.filename);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+      const message =
+        err instanceof Error ? err.message : '上传失败，请重试';
       setUploadState('error');
       setUploadProgress(0);
-      setUploadMessage('上传失败，请重试');
-    };
-    reader.readAsArrayBuffer(file);
+      setUploadMessage(message);
+    }
   };
 
   const handleSelectClick = () => {
@@ -141,7 +144,7 @@ function App() {
 
   useEffect(() => {
     return () => {
-      readerRef.current?.abort();
+      abortControllerRef.current?.abort();
     };
   }, []);
 
