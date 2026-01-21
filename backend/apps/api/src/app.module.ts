@@ -4,10 +4,18 @@ import { LoggerModule } from '@backend/logger';
 import { DatabaseModule } from '@backend/database';
 import { HealthController } from './health.controller';
 import { ExportModule } from './modules/export/export.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [ConfigModule, LoggerModule, DatabaseModule, ExportModule, UsersModule],
+  imports: [
+    ConfigModule,
+    LoggerModule,
+    DatabaseModule,
+    ExportModule,
+    UploadModule,
+    UsersModule,
+  ],
   controllers: [HealthController],
 })
 export class AppModule {}
