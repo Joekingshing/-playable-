@@ -247,7 +247,7 @@ myapp/
 
 #### 4. 多服务（多个 main.ts）约定
 
-- `backend/apps/api/src/main.ts`：对外 API（端口如 8080）
+- `backend/apps/api/src/main.ts`：对外 API（端口如 6000）
 - `backend/apps/worker/src/main.ts`：后台任务/消费者（不暴露 HTTP 或仅暴露 metrics）
 - `backend/apps/admin/src/main.ts`：内部管理（端口如 8081）
 
@@ -295,7 +295,7 @@ pnpm create vite frontend --template react-ts
 
 ```env
 # frontend/.env.development
-VITE_API_BASE_URL=http://localhost:8080
+VITE_API_BASE_URL=http://localhost:6000
 ```
 
 - 在 `frontend/src/api/` 中封装 `client.ts`（统一 baseUrl、headers、错误处理）。
@@ -305,7 +305,7 @@ VITE_API_BASE_URL=http://localhost:8080
 
 在 `frontend/vite.config.ts` 配置 proxy（可选）：
 
-- `/api` → `http://localhost:8080`
+- `/api` → `http://localhost:6000`
 
 以避免跨域/简化开发环境配置。
 
@@ -472,7 +472,7 @@ services:
     env_file:
       - ../.env
     ports:
-      - "8080:8080"
+      - "6000:6000"
     depends_on:
       - db
 
@@ -518,7 +518,7 @@ volumes:
 | --- | --- | --- |
 | 后端多服务 | `just backend-dev app=api` / `app=worker` 可分别启动 | 控制台日志 |
 | 数据库连接 | API 服务启动时能连接 Postgres（并可查询） | 控制台/DB 客户端 |
-| REST API | 访问 `http://localhost:8080/users` 返回 JSON | 浏览器/curl |
+| REST API | 访问 `http://localhost:6000/users` 返回 JSON | 浏览器/curl |
 | 前端 | `just frontend-dev` 启动后能访问页面 | 浏览器 |
 | 前后端联调 | 前端能请求 API 并渲染用户列表 | 浏览器 |
 | Docker 环境 | `just up` 可启动 db + app（按 profiles） | 控制台 |
@@ -587,7 +587,7 @@ just dev app=api
 ```
 
 - 数据库启动在 `localhost:5432`
-- 后端 API 服务启动在 `http://localhost:8080`
+- 后端 API 服务启动在 `http://localhost:6000`
 - 前端启动在 `http://localhost:5173`（Vite 默认端口，按实际为准）
-- 浏览器访问 `http://localhost:8080/users` 能返回数据
+- 浏览器访问 `http://localhost:6000/users` 能返回数据
 - 前端页面能成功请求并展示用户列表
