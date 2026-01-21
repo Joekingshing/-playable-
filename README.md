@@ -31,7 +31,7 @@ just down
 
 ## Ports
 
-- API: http://localhost:6000
+- API: http://localhost:6100
 - Admin: http://localhost:8081
 - Frontend: http://localhost:5173
 - Postgres: localhost:5432
