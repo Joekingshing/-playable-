@@ -1,0 +1,15 @@
+{
+  "projectName": "playable-phaser",
+  "readmeName": "README.md",
+  "srcDirs": [
+    "src",
+    "src/game",
+    "src/game/scenes",
+    "src/game/components",
+    "src/assets",
+    "src/config"
+  ],
+  "srcFiles": [
+    "src/game/EventBus.ts"
+  ]
+}
