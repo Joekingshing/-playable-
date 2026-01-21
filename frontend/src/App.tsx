@@ -40,7 +40,21 @@ function App() {
           </div>
         </div>
       </div>
-      <main className="app" />
+      <main className="app">
+        <header className="hero">
+          <div>
+            <p className="eyebrow">Playable Studio</p>
+            <h1>Fullstack Monorepo Template</h1>
+            <p className="subtitle">
+              React + Vite frontend paired with a multi-app NestJS backend.
+            </p>
+          </div>
+          <div className="status-card">
+            <span className="status-label">Backend status</span>
+            <span className="status-value">/health</span>
+          </div>
+        </header>
+      </main>
     </div>
   );
 }
