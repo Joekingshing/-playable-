@@ -10,6 +10,8 @@
 - Add shared types package and minimal OpenAPI placeholder.
 - Switch `just dev` to a Windows-friendly PowerShell runner.
 - Fix UsersModule wiring to import DatabaseModule.
+- Set Vite dev server port to 8000.
+- Name docker compose project and Postgres container.
 
 ## Impact Scope
 - New workspace layout under backend/, frontend/, shared/, docker/.
@@ -21,6 +23,8 @@
 - pnpm -C E:\playable\backend build
 - pnpm -C E:\playable\frontend build
 - E:\Git\bin\bash.exe -lc "cd /e/playable && /c/Users/joe/scoop/shims/just.exe dev app=api duration=10"
+- pnpm -C E:\playable\frontend build
+- just dev app=api (frontend on http://localhost:8000)
 
 ## Key Diff (Self-check)
 d7e0810 (HEAD -> fullstack) fix: make dev script windows-friendly
