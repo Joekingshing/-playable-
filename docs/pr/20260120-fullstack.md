@@ -13,6 +13,7 @@
 - Set Vite dev server port to 8000.
 - Name docker compose project and Postgres container.
 - Keep the top toolbar sticky and full-width with a centered inner layout.
+- Tighten export archive typing and error handling.
 
 ## Impact Scope
 - New workspace layout under backend/, frontend/, shared/, docker/.
@@ -27,6 +28,7 @@
 - pnpm -C E:\playable\frontend build
 - just dev app=api (frontend on http://localhost:8000)
 - pnpm -C E:\playable\frontend build
+- pnpm -C E:\playable\backend build
 
 ## Key Diff (Self-check)
 d7e0810 (HEAD -> fullstack) fix: make dev script windows-friendly
