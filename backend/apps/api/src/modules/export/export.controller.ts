@@ -20,8 +20,10 @@ export class ExportController {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
 
-    archive.on('error', (error) => {
-      throw new InternalServerErrorException(error.message);
+    archive.on('error', (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : 'Export archive failed.';
+      throw new InternalServerErrorException(message);
     });
 
     void archive.finalize();
