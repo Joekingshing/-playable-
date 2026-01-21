@@ -14,3 +14,12 @@ export async function apiGet<T>(path: string): Promise<T> {
   }
   return response.json() as Promise<T>;
 }
+
+export async function apiDownload(path: string): Promise<Response> {
+  const response = await fetch(resolveUrl(path));
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Request failed: ${response.status}`);
+  }
+  return response;
+}
