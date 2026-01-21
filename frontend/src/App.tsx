@@ -52,58 +52,62 @@ function App() {
   }, []);
 
   return (
-    <div className="app">
+    <div className="page">
       <div className="toolbar">
-        <div className="toolbar-title">项目名</div>
-        <div className="toolbar-actions">
-          <button type="button" className="toolbar-button">
-            保存
-          </button>
-          <button
-            type="button"
-            className="toolbar-button primary"
-            onClick={handleExport}
-            disabled={exporting}
-          >
-            {exporting ? '导出中...' : '导出'}
-          </button>
+        <div className="toolbar-inner">
+          <div className="toolbar-title">项目名</div>
+          <div className="toolbar-actions">
+            <button type="button" className="toolbar-button">
+              保存
+            </button>
+            <button
+              type="button"
+              className="toolbar-button primary"
+              onClick={handleExport}
+              disabled={exporting}
+            >
+              {exporting ? '导出中...' : '导出'}
+            </button>
+          </div>
         </div>
       </div>
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Playable Studio</p>
-          <h1>Fullstack Monorepo Template</h1>
-          <p className="subtitle">
-            React + Vite frontend paired with a multi-app NestJS backend.
-          </p>
-        </div>
-        <div className="status-card">
-          <span className="status-label">Backend status</span>
-          <span className="status-value">/health</span>
-        </div>
-      </header>
+      <main className="app">
+        <header className="hero">
+          <div>
+            <p className="eyebrow">Playable Studio</p>
+            <h1>Fullstack Monorepo Template</h1>
+            <p className="subtitle">
+              React + Vite frontend paired with a multi-app NestJS backend.
+            </p>
+          </div>
+          <div className="status-card">
+            <span className="status-label">Backend status</span>
+            <span className="status-value">/health</span>
+          </div>
+        </header>
 
-      <section className="panel">
-        <div className="panel-header">
-          <h2>Users API</h2>
-          <p>GET /users</p>
-        </div>
+        <section className="panel">
+          <div className="panel-header">
+            <h2>Users API</h2>
+            <p>GET /users</p>
+          </div>
 
-        {state === 'loading' && <p className="muted">Loading users...</p>}
-        {state === 'error' && (
-          <p className="error">Failed to load users: {error}</p>
-        )}
-        {state === 'ready' && (
-          <ul className="user-list">
-            {users.map((user) => (
-              <li key={user.id}>
-                <span className="user-id">#{user.id}</span>
-                <span className="user-name">{user.name}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {state === 'loading' && <p className="muted">Loading users...</p>}
+          {state === 'error' && (
+            <p className="error">Failed to load users: {error}</p>
+          )}
+          {state === 'ready' && (
+            <ul className="user-list">
+              {users.map((user) => (
+                <li key={user.id}>
+                  <span className="user-id">#{user.id}</span>
+                  <span className="user-name">{user.name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
     </div>
   );
 }

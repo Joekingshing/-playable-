@@ -12,6 +12,7 @@
 - Fix UsersModule wiring to import DatabaseModule.
 - Set Vite dev server port to 8000.
 - Name docker compose project and Postgres container.
+- Keep the top toolbar sticky and full-width with a centered inner layout.
 
 ## Impact Scope
 - New workspace layout under backend/, frontend/, shared/, docker/.
@@ -25,6 +26,7 @@
 - E:\Git\bin\bash.exe -lc "cd /e/playable && /c/Users/joe/scoop/shims/just.exe dev app=api duration=10"
 - pnpm -C E:\playable\frontend build
 - just dev app=api (frontend on http://localhost:8000)
+- pnpm -C E:\playable\frontend build
 
 ## Key Diff (Self-check)
 d7e0810 (HEAD -> fullstack) fix: make dev script windows-friendly
