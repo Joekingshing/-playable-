@@ -4,6 +4,7 @@ import { stat } from 'fs/promises';
 import { basename, resolve } from 'path';
 
 const DEFAULT_EXPORT_PATH = 'E:\\playable\\playable-phaser';
+const NODE_MODULES_PATTERN = /(^|\/)node_modules($|\/)/;
 
 @Injectable()
 export class ExportService {
@@ -21,7 +22,12 @@ export class ExportService {
     }
 
     const archive = archiver('zip', { zlib: { level: 9 } });
-    archive.directory(this.sourcePath, basename(this.sourcePath));
+    archive.directory(this.sourcePath, basename(this.sourcePath), (entry) => {
+      if (NODE_MODULES_PATTERN.test(entry.name)) {
+        return false;
+      }
+      return entry;
+    });
 
     const filename = `${Date.now()}.zip`;
     return { archive, filename };
