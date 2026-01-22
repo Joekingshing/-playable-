@@ -9,8 +9,8 @@ from typing import Optional
 DEFAULT_DOCS_DIR = "docs"
 DEFAULT_OUTPUT_FILE = os.path.join(DEFAULT_DOCS_DIR, "_sidebar.md")
 DEFAULT_MENU_FILE = os.path.join(DEFAULT_DOCS_DIR, "menu.json")
-# 若部署在 GitHub Pages 项目页（https://user.github.io/your-repo/），改为 "/your-repo/"
-BASE_PREFIX = "/"
+# 文档位于 /docs/ 子目录时使用 "/docs/"；若部署在 GitHub Pages 项目页（https://user.github.io/your-repo/），改为 "/your-repo/"
+BASE_PREFIX = "/docs/"
 
 IGNORE_FILES = {"_sidebar.md", "index.html", ".nojekyll", "menu.json"}
 IGNORE_DIRS = {".git", "__pycache__", ".DS_Store"}

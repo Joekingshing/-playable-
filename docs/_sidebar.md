@@ -1,3 +1,3 @@
-* [Function](/Function.md)
+* [Function](/docs/Function.md)
 * Blueprints
-  * [Monorepo Fullstack Template](/blueprints/monorepo_fullstack_template.md)
+  * [Monorepo Fullstack Template](/docs/blueprints/monorepo_fullstack_template.md)
