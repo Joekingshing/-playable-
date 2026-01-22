@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>📘 GURU 文档中心</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <style>
+    /* 打印样式：导出 PDF 时隐藏不需要的区域和按钮，只保留正文 */
+    @media print {
+      .sidebar,
+      .app-nav,
+      #copy-page-btn,
+      #export-pdf-btn,
+      #service-actions,
+      #copy-md-btn,
+      .mermaid .diagram-toggle {
+        display: none !important;
+      }
+      body {
+        margin: 0;
+      }
+      .content {
+        margin: 0 !important;
+        padding: 0 16px !important;
+      }
+    }
+
+    /* 统一固定为 4:3 宽高比 */
+    .mermaid {
+      position: relative;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+      padding: 0;
+      overflow: hidden;
+      aspect-ratio: 16 / 10;   /* ✅ 关键：固定 4:3 */
+      min-height: 260px;      /* 窄屏保底高度，可按需调整 */
+    }
+    .mermaid svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+      transition: transform 0.15s ease;
+      user-select: none;
+    }
+    .mermaid svg:active { cursor: grabbing; }
+    .mermaid.is-select-mode svg,
+    .mermaid.is-select-mode svg:active {
+      cursor: text;
+    }
+    .mermaid.is-select-mode svg text {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .mermaid .diagram-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.45);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 2;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+    .mermaid .diagram-toggle:hover {
+      transform: translateY(-1px);
+      background: rgba(0, 0, 0, 0.6);
+    }
+    .mermaid .diagram-toggle:active {
+      transform: translateY(0);
+    }
+    .mermaid .diagram-toggle:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .mermaid .diagram-toggle img {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+    .mermaid .select-toggle {
+      right: 44px;
+    }
+    .mermaid .select-toggle.is-active {
+      background: rgba(47, 116, 255, 0.75);
+    }
+    .mermaid:fullscreen {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .mermaid:fullscreen svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    #service-actions {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .service-btn {
+      padding: 8px 12px;
+      font-size: 12px;
+      border: 0;
+      border-radius: 6px;
+      background: #2f74ff;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(47, 116, 255, 0.3);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+    .service-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(47, 116, 255, 0.35);
+    }
+    .service-btn:active {
+      transform: translateY(0);
+    }
+    .service-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+      box-shadow: none;
+    }
+    .service-btn.is-success {
+      background: #2e7d32;
+    }
+    .service-btn.is-error {
+      background: #b42318;
+    }
+    @media (max-width: 768px) {
+      #service-actions {
+        right: 12px;
+        bottom: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">加载中...</div>
+
+  <script>
+    // 接管 ```mermaid 渲染：返回占位容器并异步填充 SVG（兼容 Mermaid v10）
+    let __mermaidSvgCounter = 0;
+    let __latestMarkdown = '';
+
+    const writeClipboardText = async (text) => {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.top = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (!ok) {
+        throw new Error('copy failed');
+      }
+    };
+
+    const flashButtonState = (button, text, state) => {
+      const defaultLabel = button.dataset.defaultLabel || button.textContent;
+      if (!button.dataset.defaultLabel) {
+        button.dataset.defaultLabel = defaultLabel;
+      }
+      button.textContent = text;
+      button.classList.remove('is-success', 'is-error');
+      if (state) {
+        button.classList.add(`is-${state}`);
+      }
+      if (button.__resetTimer) {
+        window.clearTimeout(button.__resetTimer);
+      }
+      button.__resetTimer = window.setTimeout(() => {
+        button.textContent = button.dataset.defaultLabel;
+        button.classList.remove('is-success', 'is-error');
+      }, 1600);
+    };
+
+    const buildSvgDataUrl = (svg) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    const fullscreenEnterIcon = buildSvgDataUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><polyline points="21 15 21 21 15 21"/><polyline points="3 9 3 3 9 3"/></svg>');
+    const fullscreenExitIcon = buildSvgDataUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 9 9 3 9"/><polyline points="15 21 15 15 21 15"/><polyline points="21 9 15 9 15 3"/><polyline points="3 15 9 15 9 21"/></svg>');
+    const selectModeIcon = buildSvgDataUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="18" y2="3"/><line x1="6" y1="21" x2="18" y2="21"/><line x1="10" y1="3" x2="10" y2="21"/><line x1="14" y1="3" x2="14" y2="21"/></svg>');
+    const dragModeIcon = buildSvgDataUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="19 9 22 12 19 15"/><polyline points="9 5 12 2 15 5"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>');
+    let __fullscreenListenerBound = false;
+
+    const updateFullscreenButton = (button, isFullscreen) => {
+      const icon = isFullscreen ? fullscreenExitIcon : fullscreenEnterIcon;
+      const label = isFullscreen ? '退出全屏' : '全屏查看';
+      button.title = label;
+      button.setAttribute('aria-label', label);
+      const img = button.querySelector('img');
+      if (img) {
+        img.src = icon;
+      }
+    };
+
+    const updateAllFullscreenButtons = () => {
+      document.querySelectorAll('.fullscreen-toggle').forEach((button) => {
+        const targetId = button.dataset.targetId;
+        const target = targetId ? document.getElementById(targetId) : button.closest('.mermaid');
+        updateFullscreenButton(button, !!target && document.fullscreenElement === target);
+      });
+    };
+
+    const updateSelectButton = (button, isSelectMode) => {
+      const icon = isSelectMode ? selectModeIcon : dragModeIcon;
+      const label = isSelectMode ? '文本可选（复制模式）' : '拖拽缩放（浏览模式）';
+      button.title = label;
+      button.setAttribute('aria-label', label);
+      button.classList.toggle('is-active', isSelectMode);
+      const img = button.querySelector('img');
+      if (img) {
+        img.src = icon;
+      }
+    };
+
+    const setSelectMode = (container, enabled) => {
+      if (!container) return;
+      container.classList.toggle('is-select-mode', enabled);
+      const button = container.querySelector('.select-toggle');
+      if (button) {
+        updateSelectButton(button, enabled);
+      }
+      const panzoom = container.__panzoom;
+      if (panzoom && typeof panzoom.setOptions === 'function') {
+        panzoom.setOptions({ disablePan: enabled, disableZoom: enabled });
+      }
+      if (container.__wheelHandler) {
+        if (enabled && container.__wheelBound) {
+          container.removeEventListener('wheel', container.__wheelHandler);
+          container.__wheelBound = false;
+        } else if (!enabled && !container.__wheelBound) {
+          container.addEventListener('wheel', container.__wheelHandler, { passive: false });
+          container.__wheelBound = true;
+        }
+      }
+      if (container.__resetHandler) {
+        if (enabled && container.__resetBound) {
+          container.removeEventListener('dblclick', container.__resetHandler);
+          container.__resetBound = false;
+        } else if (!enabled && !container.__resetBound) {
+          container.addEventListener('dblclick', container.__resetHandler);
+          container.__resetBound = true;
+        }
+      }
+    };
+
+    const ensureSelectButton = (container) => {
+      if (!container || container.querySelector('.select-toggle')) return;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'diagram-toggle select-toggle';
+      button.dataset.targetId = container.id || '';
+
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = dragModeIcon;
+      button.appendChild(img);
+
+      updateSelectButton(button, false);
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const nextState = !container.classList.contains('is-select-mode');
+        setSelectMode(container, nextState);
+      });
+
+      container.appendChild(button);
+    };
+
+    const ensureFullscreenButton = (container) => {
+      if (!container || container.querySelector('.fullscreen-toggle')) return;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'diagram-toggle fullscreen-toggle';
+      button.dataset.targetId = container.id || '';
+
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = fullscreenEnterIcon;
+      button.appendChild(img);
+
+      const supported = !!(container.requestFullscreen && document.fullscreenEnabled !== false);
+      if (!supported) {
+        button.disabled = true;
+        button.title = '浏览器不支持全屏';
+        button.setAttribute('aria-label', '浏览器不支持全屏');
+      } else {
+        updateFullscreenButton(button, false);
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (document.fullscreenElement === container) {
+            document.exitFullscreen();
+          } else {
+            container.requestFullscreen();
+          }
+        });
+      }
+
+      container.appendChild(button);
+
+      if (!__fullscreenListenerBound) {
+        __fullscreenListenerBound = true;
+        document.addEventListener('fullscreenchange', updateAllFullscreenButtons);
+      }
+    };
+
+    const ensureServiceButtons = () => {
+      if (document.getElementById('service-actions')) return;
+
+      const container = document.createElement('div');
+      container.id = 'service-actions';
+      container.innerHTML = '<button id="copy-md-btn" class="service-btn" type="button" title="复制当前文档 Markdown">复制 Markdown</button>';
+      document.body.appendChild(container);
+
+      const copyBtn = document.getElementById('copy-md-btn');
+      copyBtn.addEventListener('click', async () => {
+        if (!__latestMarkdown) {
+          flashButtonState(copyBtn, '暂无内容', 'error');
+          return;
+        }
+        copyBtn.disabled = true;
+        try {
+          await writeClipboardText(__latestMarkdown);
+          flashButtonState(copyBtn, '已复制', 'success');
+        } catch (err) {
+          console.warn('Copy markdown failed:', err);
+          flashButtonState(copyBtn, '复制失败', 'error');
+        } finally {
+          copyBtn.disabled = false;
+        }
+      });
+    };
+
+    window.$docsify = {
+      name: '📘 GURU 文档中心',
+      loadSidebar: '_sidebar.md',
+      subMaxLevel: 3,
+      auto2top: true,
+      relativePath: true,   // ✅ 关键：让链接按“当前文档”相对解析
+      sidebarDisplayLevel: 0,
+      plugins: [
+        function(hook) {
+          hook.beforeEach(function(content) {
+            __latestMarkdown = content || '';
+            return content;
+          });
+          hook.doneEach(function() {
+            ensureServiceButtons();
+            const copyBtn = document.getElementById('copy-md-btn');
+            if (copyBtn) {
+              copyBtn.disabled = !__latestMarkdown;
+            }
+          });
+        }
+      ],
+      markdown: {
+        renderer: {
+          code(code, lang) {
+            if (lang === 'mermaid') {
+              const svgName = `mermaid-svg-${__mermaidSvgCounter++}`;
+              const containerId = `${svgName}-container`;
+
+              // 异步渲染，完成后把 SVG 填进占位容器
+              Promise.resolve().then(() => {
+                mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+                return mermaid.render(svgName, code);
+              }).then(({ svg }) => {
+                const el = document.getElementById(containerId);
+                if (!el) return;
+                el.innerHTML = svg;
+
+                // 优化可见性：保持 SVG 内容居中缩放
+                const svgEl = el.querySelector('svg');
+                if (svgEl) {
+                  svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+                  // Panzoom 缩放/拖拽/复位
+                  if (!svgEl.dataset.zoomBound) {
+                    svgEl.dataset.zoomBound = 'true';
+                    const panzoom = Panzoom(svgEl, { maxScale: 5, minScale: 0.5, contain: 'outside' });
+                    const wheelHandler = panzoom.zoomWithWheel;
+                    const resetHandler = () => panzoom.reset();
+                    el.__panzoom = panzoom;
+                    el.__wheelHandler = wheelHandler;
+                    el.__resetHandler = resetHandler;
+                    el.__wheelBound = true;
+                    el.__resetBound = true;
+                    el.addEventListener('wheel', wheelHandler, { passive: false });
+                    el.addEventListener('dblclick', resetHandler);
+                  }
+                }
+                ensureFullscreenButton(el);
+                ensureSelectButton(el);
+              }).catch(err => console.warn('Mermaid render error:', err));
+
+              // 返回固定 4:3 的占位容器
+              return `<div class="mermaid" id="${containerId}"></div>`;
+            }
+            return this.origin.code.apply(this, arguments);
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Docsify -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <!-- Mermaid v10+ -->
+  <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- Panzoom（缩放/拖拽） -->
+  <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-sidebar-collapse/dist/docsify-sidebar-collapse.min.js"></script>
+
+</body>
+</html>
