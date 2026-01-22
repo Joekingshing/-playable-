@@ -147,70 +147,73 @@ function App() {
           </div>
         </div>
       </div>
-      <main className="app">
-        <section
-          className={`upload-zone${dragActive ? ' is-dragging' : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <div className="upload-zone-inner">
-            <div>
-              <h2 className="upload-zone-title">图片上传</h2>
-              <p className="upload-zone-subtitle">
-                支持拖拽上传，或点击按钮选择图片
-              </p>
-            </div>
-            <div className="upload-actions">
-              <input
-                ref={fileInputRef}
-                className="upload-input"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleInputChange}
-              />
-              <button
-                type="button"
-                className="toolbar-button"
-                onClick={handleSelectClick}
-              >
-                选择图片
-              </button>
-              <span className="upload-hint">支持 png / jpg / webp</span>
-            </div>
-            {uploadState !== 'idle' && (
-              <div className="upload-feedback" aria-live="polite">
-                {showProgress && (
-                  <div
-                    className="upload-progress"
-                    role="progressbar"
-                    aria-valuenow={uploadProgress}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  >
-                    <div
-                      className="upload-progress-bar"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                )}
-                <p className={`upload-status ${uploadState}`}>
-                  {uploadStatusText}
+      <div className="layout">
+        <aside className="sidebar">
+          <section
+            className={`upload-zone${dragActive ? ' is-dragging' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className="upload-zone-inner">
+              <div>
+                <h2 className="upload-zone-title">图片上传</h2>
+                <p className="upload-zone-subtitle">
+                  支持拖拽上传，或点击按钮选择图片
                 </p>
-                {uploadState === 'success' && (
-                  <button
-                    type="button"
-                    className="upload-reset"
-                    onClick={resetUploadState}
-                  >
-                    继续上传
-                  </button>
-                )}
               </div>
-            )}
-          </div>
-        </section>
-      </main>
+              <div className="upload-actions">
+                <input
+                  ref={fileInputRef}
+                  className="upload-input"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleInputChange}
+                />
+                <button
+                  type="button"
+                  className="toolbar-button"
+                  onClick={handleSelectClick}
+                >
+                  选择图片
+                </button>
+                <span className="upload-hint">支持 png / jpg / webp</span>
+              </div>
+              {uploadState !== 'idle' && (
+                <div className="upload-feedback" aria-live="polite">
+                  {showProgress && (
+                    <div
+                      className="upload-progress"
+                      role="progressbar"
+                      aria-valuenow={uploadProgress}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <div
+                        className="upload-progress-bar"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                  <p className={`upload-status ${uploadState}`}>
+                    {uploadStatusText}
+                  </p>
+                  {uploadState === 'success' && (
+                    <button
+                      type="button"
+                      className="upload-reset"
+                      onClick={resetUploadState}
+                    >
+                      继续上传
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+        </aside>
+        <main className="content" />
+      </div>
     </div>
   );
 }
