@@ -8,13 +8,13 @@
 ## 0. Agent 输出要求（团队协作约束）
 
 - **所有任务执行结果**（进度、结论、总结、风险、验证记录等）必须**使用中文**输出，便于同步。
-- **重要**：只要涉及前端或后端代码更新，收尾务必做一次**构建校验**（二选一或都做，取决于改动范围）：
+- **特别重要**：前端或后端代码有更新后，收尾务必做一次**构建校验**，避免编译问题漏到 PR：
   - 前端编辑器：`(cd "$WT/apps/editor" && pnpm build)`
   - 后端服务：`(cd "$WT/apps/server" && pnpm build)`
 - **导出链路相关改动**（模板 / codegen / export 服务）收尾必须做一次**导出冒烟**（推荐固定一个 demo 项目或固定 IR case）：
-  - `（建议在 justfile 固化）(cd "$WT" && just export-smoke)`
-- **建议**：遵循仓库的 git-worktree SOP（如果你已采用 worktree 流程）：每个任务一个 worktree，避免污染控制台目录。
-
+* **极度重要**：所有任务必须按 `docs/tools/git-worktree-sop.md` 执行：
+  **仅从控制台目录（`spike/fullstack`）拉分支、使用 worktree 隔离开发、完成后生成本地 PR 审阅单并本地合并回 `spike/fullstack`；不符合流程的改动一律视为不合规，不得合并。**
+- **简报文档保存位置**：若未特别指明需要生成并保存简报的路径，则默认将简报保存在 `docs/logs/YYYYMMDD/` 目录中（`YYYYMMDD` 为生成当日日期）。系统生成:TID=`T<yymmddHHMM>` 文件名:<TID>-<name>.md
 ---
 
 ## 1. 🧱 全局硬门槛：所有相关操作必须显式落到 `$WT`

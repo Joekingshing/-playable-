@@ -92,4 +92,4 @@ docs-dev:
 # 从 menu 配置生成侧边栏结构
 # -----------------------------
 gen-sidebar:
-    python3 scripts/generate_sidebar.py --commit
+    python scripts/generate_sidebar.py --commit
