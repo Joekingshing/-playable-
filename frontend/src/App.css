@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   --page-padding: 1.5rem;
+  --sidebar-width: 260px;
 }
 
 .toolbar {
@@ -32,7 +33,6 @@
 }
 
 .sidebar {
-  --sidebar-width: 260px;
   --sidebar-footer-height: 40px;
   width: var(--sidebar-width);
   flex: 0 0 var(--sidebar-width);
@@ -42,6 +42,10 @@
   padding: 1.5rem 1.25rem;
   border-right: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar.is-resizing {
+  box-shadow: 12px 0 20px rgba(15, 23, 42, 0.18);
 }
 
 .sidebar .upload-zone {
@@ -72,6 +76,32 @@
   flex: 1;
   min-height: 0;
   padding: 1.75rem var(--page-padding) 3rem;
+}
+
+.sidebar-resizer {
+  width: 12px;
+  flex: 0 0 12px;
+  cursor: col-resize;
+  position: relative;
+  background: transparent;
+}
+
+.sidebar-resizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: rgba(148, 163, 184, 0.55);
+  transition: background 0.2s ease, width 0.2s ease;
+}
+
+.sidebar-resizer:hover::before,
+.sidebar-resizer.is-resizing::before {
+  background: rgba(15, 23, 42, 0.7);
+  width: 2px;
 }
 
 .toolbar-title {
@@ -221,6 +251,11 @@
   color: #1e293b;
 }
 
+body.is-resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
 @media (max-width: 720px) {
   .toolbar-inner {
     flex-direction: column;
@@ -241,6 +276,10 @@
     flex: 0 0 auto;
     border-right: none;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .sidebar-resizer {
+    display: none;
   }
 
   .sidebar-footer {
