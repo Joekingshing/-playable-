@@ -81,3 +81,15 @@ migrate-deploy:
 
 studio:
     cd backend && pnpm prisma studio
+
+# -----------------------------
+# Serve docs with docsify
+# -----------------------------
+docs-dev:
+    pnpm dlx docsify-cli@latest serve docs -p 4173
+
+# -----------------------------
+# 从 menu 配置生成侧边栏结构
+# -----------------------------
+gen-sidebar:
+    python3 scripts/generate_sidebar.py --commit
