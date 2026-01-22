@@ -1,11 +1,14 @@
 .page {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  --page-padding: 1.5rem;
 }
 
 .toolbar {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 30;
   width: 100%;
   background: rgba(245, 243, 239, 0.95);
   backdrop-filter: blur(10px);
@@ -13,22 +16,33 @@
 }
 
 .toolbar-inner {
-  max-width: 960px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.95rem 1.5rem;
+  padding: 0.95rem var(--page-padding);
 }
 
-.app {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 3.5rem 1.5rem 4rem;
+.layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.75rem var(--page-padding) 3rem;
+  align-items: stretch;
+}
+
+.sidebar {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  align-self: stretch;
+  gap: 1.5rem;
+}
+
+.content {
+  min-height: 0;
 }
 
 .toolbar-title {
@@ -184,5 +198,9 @@
   .toolbar-actions {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
   }
 }
