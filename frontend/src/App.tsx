@@ -16,6 +16,27 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const isFileDrag = (event: React.DragEvent<HTMLElement>) => {
+    const { dataTransfer } = event;
+    if (!dataTransfer) {
+      return false;
+    }
+
+    if (dataTransfer.items && dataTransfer.items.length > 0) {
+      return Array.from(dataTransfer.items).some((item) => {
+        if (item.kind !== 'file') {
+          return false;
+        }
+        if (!item.type) {
+          return true;
+        }
+        return item.type.startsWith('image/');
+      });
+    }
+
+    return Array.from(dataTransfer.types).includes('Files');
+  };
+
   const handleExport = async () => {
     if (exporting) {
       return;
@@ -41,6 +62,7 @@ function App() {
   };
 
   const handleFile = async (file: File | undefined) => {
+    setDragActive(false);
     if (!file) {
       return;
     }
@@ -91,8 +113,20 @@ function App() {
     event.target.value = '';
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(event)) {
+      return;
+    }
     event.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
     setDragActive(true);
   };
 
@@ -150,13 +184,16 @@ function App() {
       <div className="layout">
         <aside
           className="sidebar"
+          onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <section
-            className={`upload-zone${dragActive ? ' is-dragging' : ''}`}
-          >
+          <div
+            className={`sidebar-overlay${dragActive ? ' is-active' : ''}`}
+            aria-hidden="true"
+          />
+          <section className="upload-zone">
             <div className="upload-zone-inner">
               {uploadState !== 'idle' && (
                 <div className="upload-feedback" aria-live="polite">
