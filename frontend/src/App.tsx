@@ -148,30 +148,16 @@ function App() {
         </div>
       </div>
       <div className="layout">
-        <aside className="sidebar">
+        <aside
+          className="sidebar"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <section
             className={`upload-zone${dragActive ? ' is-dragging' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
           >
             <div className="upload-zone-inner">
-              <div className="upload-actions">
-                <input
-                  ref={fileInputRef}
-                  className="upload-input"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleInputChange}
-                />
-                <button
-                  type="button"
-                  className="toolbar-button"
-                  onClick={handleSelectClick}
-                >
-                  上传
-                </button>
-              </div>
               {uploadState !== 'idle' && (
                 <div className="upload-feedback" aria-live="polite">
                   {showProgress && (
@@ -204,6 +190,24 @@ function App() {
               )}
             </div>
           </section>
+          <div className="sidebar-footer">
+            <input
+              ref={fileInputRef}
+              className="upload-input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handleInputChange}
+            />
+            <button
+              type="button"
+              className="sidebar-add"
+              title="添加图片"
+              aria-label="添加图片"
+              onClick={handleSelectClick}
+            >
+              <span aria-hidden>+</span>
+            </button>
+          </div>
         </aside>
         <main className="content" />
       </div>
