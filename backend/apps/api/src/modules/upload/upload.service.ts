@@ -4,6 +4,7 @@ import { basename, resolve } from 'path';
 
 const DEFAULT_ASSETS_PATH = 'E:\\testfile';
 const INVALID_FILENAME_CHARS = /[<>:"/\\|?*]/g;
+const LATIN1_RANGE = /[\u0080-\u00ff]/;
 
 type UploadFile = {
   originalname: string;
@@ -29,7 +30,8 @@ export class UploadService {
   }
 
   async saveImage(file: UploadFile): Promise<UploadResult> {
-    const sanitizedName = this.sanitizeFilename(file.originalname);
+    const normalizedName = this.normalizeFilename(file.originalname);
+    const sanitizedName = this.sanitizeFilename(normalizedName);
     const filename = `${Date.now()}-${sanitizedName}`;
     const savedPath = resolve(this.assetsPath, filename);
 
@@ -48,5 +50,14 @@ export class UploadService {
     const baseName = basename(originalName);
     const cleaned = baseName.replace(INVALID_FILENAME_CHARS, '_').trim();
     return cleaned.length > 0 ? cleaned : `upload-${Date.now()}`;
+  }
+
+  private normalizeFilename(originalName: string): string {
+    if (!LATIN1_RANGE.test(originalName)) {
+      return originalName;
+    }
+
+    const decoded = Buffer.from(originalName, 'latin1').toString('utf8');
+    return decoded.includes('\uFFFD') ? originalName : decoded;
   }
 }
