@@ -5,11 +5,11 @@
 
 ## 变更摘要
 - AGENTS.md 增加端口占用的启动要求
-- report/ 新增时间戳简报
+- docs/logs/20260121 新增时间戳简报
 
 ## 影响范围
 - AGENTS.md
-- report/20260121161852.md
+- docs/logs/20260121/T2601211618-export-brief.md
 
 ## 风险与回滚
 - 风险：仅文档变更，无功能风险
@@ -43,5 +43,5 @@ f5bab2b chore: update PR note
 ## Diff (fullstack...HEAD)
 
  AGENTS.md                |  5 +++++
- report/20260121161852.md | 14 ++++++++++++++
+ docs/logs/20260121/T2601211618-export-brief.md | 14 ++++++++++++++
  2 files changed, 19 insertions(+)
