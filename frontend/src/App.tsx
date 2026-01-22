@@ -156,12 +156,6 @@ function App() {
             onDrop={handleDrop}
           >
             <div className="upload-zone-inner">
-              <div>
-                <h2 className="upload-zone-title">图片上传</h2>
-                <p className="upload-zone-subtitle">
-                  支持拖拽上传，或点击按钮选择图片
-                </p>
-              </div>
               <div className="upload-actions">
                 <input
                   ref={fileInputRef}
@@ -175,9 +169,8 @@ function App() {
                   className="toolbar-button"
                   onClick={handleSelectClick}
                 >
-                  选择图片
+                  上传
                 </button>
-                <span className="upload-hint">支持 png / jpg / webp</span>
               </div>
               {uploadState !== 'idle' && (
                 <div className="upload-feedback" aria-live="polite">
