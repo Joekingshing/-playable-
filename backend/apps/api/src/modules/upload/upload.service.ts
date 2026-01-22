@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { mkdir, writeFile } from 'fs/promises';
 import { basename, resolve } from 'path';
 
-const DEFAULT_ASSETS_PATH = 'E:\\playable\\playable-phaser\\src\\assets';
+const DEFAULT_ASSETS_PATH = 'E:\\testfile';
 const INVALID_FILENAME_CHARS = /[<>:"/\\|?*]/g;
 
 type UploadFile = {
