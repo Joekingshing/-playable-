@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { downloadExportZip } from './api/export';
 import { uploadImage } from './api/upload';
 import './App.css';
 
 type UploadState = 'idle' | 'uploading' | 'success' | 'error';
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const DEFAULT_SIDEBAR_WIDTH = 260;
+const MIN_SIDEBAR_WIDTH = 200;
+const MAX_SIDEBAR_WIDTH = 420;
 
 function App() {
   const [exporting, setExporting] = useState(false);
@@ -13,8 +16,13 @@ function App() {
   const [uploadMessage, setUploadMessage] = useState('');
   const [uploadFilename, setUploadFilename] = useState('');
   const [dragActive, setDragActive] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(
+    null,
+  );
 
   const isFileDrag = (event: React.DragEvent<HTMLElement>) => {
     const { dataTransfer } = event;
@@ -36,6 +44,9 @@ function App() {
 
     return Array.from(dataTransfer.types).includes('Files');
   };
+
+  const clampSidebarWidth = (value: number) =>
+    Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, value));
 
   const handleExport = async () => {
     if (exporting) {
@@ -146,11 +157,63 @@ function App() {
     handleFile(file);
   };
 
+  const handleResizeMouseDown = (
+    event: React.MouseEvent<HTMLDivElement>,
+  ) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    resizeStateRef.current = {
+      startX: event.clientX,
+      startWidth: sidebarWidth,
+    };
+    setIsResizing(true);
+  };
+
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isResizing) {
+      return;
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const state = resizeStateRef.current;
+      if (!state) {
+        return;
+      }
+      const delta = event.clientX - state.startX;
+      setSidebarWidth(clampSidebarWidth(state.startWidth + delta));
+    };
+
+    const handleMouseUp = () => {
+      resizeStateRef.current = null;
+      setIsResizing(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.body.classList.add('is-resizing');
+      return () => document.body.classList.remove('is-resizing');
+    }
+
+    document.body.classList.remove('is-resizing');
+    return undefined;
+  }, [isResizing]);
 
   const showProgress =
     uploadState === 'uploading' || uploadState === 'success';
@@ -160,9 +223,12 @@ function App() {
       : uploadState === 'success'
         ? `上传成功：${uploadFilename}`
         : uploadMessage;
+  const pageStyle = {
+    '--sidebar-width': `${sidebarWidth}px`,
+  } as CSSProperties;
 
   return (
-    <div className="page">
+    <div className="page" style={pageStyle}>
       <div className="toolbar">
         <div className="toolbar-inner">
           <div className="toolbar-title">项目名</div>
@@ -183,7 +249,7 @@ function App() {
       </div>
       <div className="layout">
         <aside
-          className="sidebar"
+          className={`sidebar${isResizing ? ' is-resizing' : ''}`}
           onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -246,6 +312,13 @@ function App() {
             </button>
           </div>
         </aside>
+        <div
+          className={`sidebar-resizer${isResizing ? ' is-resizing' : ''}`}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="调整侧边栏宽度"
+          onMouseDown={handleResizeMouseDown}
+        />
         <main className="content" />
       </div>
     </div>
