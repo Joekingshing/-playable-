@@ -78,6 +78,84 @@
   padding: 1.75rem var(--page-padding) 3rem;
 }
 
+.toast-container {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(90vw, 360px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.toast {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.toast.is-success {
+  border-color: rgba(22, 163, 74, 0.4);
+}
+
+.toast.is-error {
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.toast-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.toast-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.toast.is-success .toast-title {
+  color: #15803d;
+}
+
+.toast.is-error .toast-title {
+  color: #b91c1c;
+}
+
+.toast-percent {
+  font-size: 0.85rem;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.toast-progress {
+  width: 100%;
+  height: 6px;
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.toast-progress-bar {
+  height: 100%;
+  background: #0f172a;
+  transition: width 0.2s ease;
+}
+
+.toast-message {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
 .sidebar-resizer {
   width: 12px;
   flex: 0 0 12px;
@@ -184,55 +262,6 @@
   outline-offset: -2px;
 }
 
-.upload-feedback {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.upload-progress {
-  width: 100%;
-  height: 8px;
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.upload-progress-bar {
-  height: 100%;
-  background: #0f172a;
-  transition: width 0.2s ease;
-}
-
-.upload-status {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #475569;
-}
-
-.upload-status.success {
-  color: #15803d;
-}
-
-.upload-status.error {
-  color: #b91c1c;
-}
-
-.upload-reset {
-  align-self: flex-start;
-  border: none;
-  background: transparent;
-  padding: 0;
-  font-weight: 600;
-  color: #0f172a;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.upload-reset:hover {
-  color: #1e293b;
-}
-
 body.is-resizing {
   user-select: none;
   cursor: col-resize;
@@ -262,6 +291,10 @@ body.is-resizing {
 
   .sidebar-resizer {
     display: none;
+  }
+
+  .toast-container {
+    top: 96px;
   }
 
   .sidebar-footer {
