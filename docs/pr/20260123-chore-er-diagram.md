@@ -10,7 +10,8 @@
 - 未运行（仅新增文档）
 
 ## 关键 Diff（自检）
-6f694ae (HEAD -> chore/er-diagram) chore: add pr note for er diagram
+089a9dd (HEAD -> chore/er-diagram) chore: fix pr note encoding
+6f694ae chore: add pr note for er diagram
 07c4871 docs: add ER diagram
 1c32465 (spike/fullstack) merge: chore/preview-restart-8
 eabcc86 (chore/preview-restart-8) chore: restart preview services
@@ -29,10 +30,9 @@ afa7187 merge: feat/upload-toast-simple
 61f7476 feat: simplify upload toast
 cf21807 merge: feat/update-version
 2248ebe chore: add pr review note
-c3e0334 chore: bump version numbers
 
 ## Diff (spike/fullstack...HEAD)
 
  docs/ER_Diagram/20260123/T2601231803_ER_Diagram.md | 167 +++++++++++++++++++++
- docs/pr/20260123-chore-er-diagram.md               | Bin 0 -> 2462 bytes
- 2 files changed, 167 insertions(+)
+ docs/pr/20260123-chore-er-diagram.md               |  38 +++++
+ 2 files changed, 205 insertions(+)
