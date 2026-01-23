@@ -8,14 +8,12 @@ import { downloadExportZip } from './api/export';
 import { uploadImage } from './api/upload';
 import './App.css';
 
-type UploadToastStatus = 'uploading' | 'success' | 'error';
+type UploadToastStatus = 'success' | 'error';
 
 type UploadToast = {
   id: string;
   status: UploadToastStatus;
   title: string;
-  message?: string;
-  progress?: number;
 };
 
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
@@ -67,14 +65,6 @@ function App() {
     setToasts((prev) => [toast, ...prev]);
   };
 
-  const updateToast = (id: string, patch: Partial<UploadToast>) => {
-    setToasts((prev) =>
-      prev.map((toast) =>
-        toast.id === id ? { ...toast, ...patch } : toast,
-      ),
-    );
-  };
-
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
     const timer = toastTimersRef.current.get(id);
@@ -121,51 +111,39 @@ function App() {
         id: toastId,
         status: 'error',
         title: '上传失败',
-        message: '仅支持 png / jpg / webp 图片格式',
       });
       scheduleToastDismiss(toastId);
       return;
     }
 
-    const toastId = createToastId();
-    addToast({
-      id: toastId,
-      status: 'uploading',
-      title: '上传中',
-      progress: 0,
-    });
-
+    const uploadId = createToastId();
     const controller = new AbortController();
-    uploadControllersRef.current.set(toastId, controller);
+    uploadControllersRef.current.set(uploadId, controller);
 
     try {
       await uploadImage(file, {
         signal: controller.signal,
-        onProgress: (percent) => {
-          updateToast(toastId, { progress: Math.round(percent) });
-        },
       });
-      updateToast(toastId, {
+      const toastId = createToastId();
+      addToast({
+        id: toastId,
         status: 'success',
         title: '上传成功',
-        progress: 100,
       });
       scheduleToastDismiss(toastId);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
-        removeToast(toastId);
         return;
       }
-      const message =
-        err instanceof Error ? err.message : '上传失败，请重试';
-      updateToast(toastId, {
+      const toastId = createToastId();
+      addToast({
+        id: toastId,
         status: 'error',
         title: '上传失败',
-        message,
       });
       scheduleToastDismiss(toastId);
     } finally {
-      uploadControllersRef.current.delete(toastId);
+      uploadControllersRef.current.delete(uploadId);
     }
   };
 
@@ -308,31 +286,7 @@ function App() {
             className={`toast is-${toast.status}`}
             role="status"
           >
-            <div className="toast-row">
-              <span className="toast-title">{toast.title}</span>
-              {toast.status === 'uploading' && (
-                <span className="toast-percent">
-                  {toast.progress ?? 0}%
-                </span>
-              )}
-            </div>
-            {toast.status === 'uploading' && (
-              <div
-                className="toast-progress"
-                role="progressbar"
-                aria-valuenow={toast.progress ?? 0}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                <div
-                  className="toast-progress-bar"
-                  style={{ width: `${toast.progress ?? 0}%` }}
-                />
-              </div>
-            )}
-            {toast.status === 'error' && toast.message && (
-              <div className="toast-message">{toast.message}</div>
-            )}
+            <span className="toast-title">{toast.title}</span>
           </div>
         ))}
       </div>
