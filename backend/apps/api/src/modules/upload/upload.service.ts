@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { mkdir, writeFile } from 'fs/promises';
-import { basename, resolve } from 'path';
+import { basename, parse, resolve } from 'path';
 
 const DEFAULT_ASSETS_PATH = 'E:\\testfile';
 const INVALID_FILENAME_CHARS = /[<>:"/\\|?*]/g;
@@ -32,7 +32,10 @@ export class UploadService {
   async saveImage(file: UploadFile): Promise<UploadResult> {
     const normalizedName = this.normalizeFilename(file.originalname);
     const sanitizedName = this.sanitizeFilename(normalizedName);
-    const filename = `${Date.now()}-${sanitizedName}`;
+    const uniqueSuffix = Date.now();
+    const { name, ext } = parse(sanitizedName);
+    const baseName = ext ? name : sanitizedName;
+    const filename = `${baseName}-${uniqueSuffix}${ext}`;
     const savedPath = resolve(this.assetsPath, filename);
 
     await mkdir(this.assetsPath, { recursive: true });
