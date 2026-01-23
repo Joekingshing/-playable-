@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, stat, writeFile } from 'fs/promises';
 import { basename, parse, resolve } from 'path';
+import { buildAssetUrl, resolveAssetsPath } from '../assets/assets.constants';
 
-const DEFAULT_ASSETS_PATH = 'E:\\testfile';
 const INVALID_FILENAME_CHARS = /[<>:"/\\|?*]/g;
 const LATIN1_RANGE = /[\u0080-\u00ff]/;
 
@@ -15,6 +15,8 @@ type UploadFile = {
 
 type UploadResult = {
   filename: string;
+  url: string;
+  mtime: number;
   savedPath: string;
   size: number;
   mimetype: string;
@@ -25,8 +27,7 @@ export class UploadService {
   private readonly assetsPath: string;
 
   constructor() {
-    const rawPath = process.env.UPLOAD_ASSETS_PATH ?? DEFAULT_ASSETS_PATH;
-    this.assetsPath = resolve(rawPath);
+    this.assetsPath = resolveAssetsPath();
   }
 
   async saveImage(file: UploadFile): Promise<UploadResult> {
@@ -40,9 +41,13 @@ export class UploadService {
 
     await mkdir(this.assetsPath, { recursive: true });
     await writeFile(savedPath, file.buffer);
+    const fileStat = await stat(savedPath);
+    const mtime = Math.round(fileStat.mtimeMs);
 
     return {
       filename,
+      url: buildAssetUrl(filename),
+      mtime,
       savedPath,
       size: file.size ?? file.buffer.length,
       mimetype: file.mimetype ?? 'application/octet-stream',

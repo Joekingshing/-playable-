@@ -4,6 +4,7 @@ import { LoggerModule } from '@backend/logger';
 import { DatabaseModule } from '@backend/database';
 import { HealthController } from './health.controller';
 import { ExportModule } from './modules/export/export.module';
+import { AssetsModule } from './modules/assets/assets.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -13,6 +14,7 @@ import { UsersModule } from './modules/users/users.module';
     LoggerModule,
     DatabaseModule,
     ExportModule,
+    AssetsModule,
     UploadModule,
     UsersModule,
   ],
