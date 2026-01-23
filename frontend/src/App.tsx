@@ -1,25 +1,40 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { downloadExportZip } from './api/export';
 import { uploadImage } from './api/upload';
 import './App.css';
 
-type UploadState = 'idle' | 'uploading' | 'success' | 'error';
+type UploadToastStatus = 'uploading' | 'success' | 'error';
+
+type UploadToast = {
+  id: string;
+  status: UploadToastStatus;
+  title: string;
+  message?: string;
+  progress?: number;
+};
+
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const DEFAULT_SIDEBAR_WIDTH = 260;
 const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 420;
+const TOAST_DISMISS_DELAY = 2000;
 
 function App() {
   const [exporting, setExporting] = useState(false);
-  const [uploadState, setUploadState] = useState<UploadState>('idle');
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadMessage, setUploadMessage] = useState('');
-  const [uploadFilename, setUploadFilename] = useState('');
+  const [toasts, setToasts] = useState<UploadToast[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const toastTimersRef = useRef<Map<string, number>>(new Map());
+  const uploadControllersRef = useRef<Map<string, AbortController>>(
+    new Map(),
+  );
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(
     null,
   );
@@ -45,6 +60,37 @@ function App() {
     return Array.from(dataTransfer.types).includes('Files');
   };
 
+  const createToastId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const addToast = (toast: UploadToast) => {
+    setToasts((prev) => [toast, ...prev]);
+  };
+
+  const updateToast = (id: string, patch: Partial<UploadToast>) => {
+    setToasts((prev) =>
+      prev.map((toast) =>
+        toast.id === id ? { ...toast, ...patch } : toast,
+      ),
+    );
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    const timer = toastTimersRef.current.get(id);
+    if (timer) {
+      window.clearTimeout(timer);
+      toastTimersRef.current.delete(id);
+    }
+  };
+
+  const scheduleToastDismiss = (id: string) => {
+    const timer = window.setTimeout(() => {
+      removeToast(id);
+    }, TOAST_DISMISS_DELAY);
+    toastTimersRef.current.set(id, timer);
+  };
+
   const clampSidebarWidth = (value: number) =>
     Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, value));
 
@@ -63,15 +109,6 @@ function App() {
     }
   };
 
-  const resetUploadState = () => {
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
-    setUploadState('idle');
-    setUploadProgress(0);
-    setUploadMessage('');
-    setUploadFilename('');
-  };
-
   const handleFile = async (file: File | undefined) => {
     setDragActive(false);
     if (!file) {
@@ -79,38 +116,56 @@ function App() {
     }
 
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setUploadState('error');
-      setUploadProgress(0);
-      setUploadFilename(file.name);
-      setUploadMessage('仅支持 png / jpg / webp 图片格式');
+      const toastId = createToastId();
+      addToast({
+        id: toastId,
+        status: 'error',
+        title: '上传失败',
+        message: '仅支持 png / jpg / webp 图片格式',
+      });
+      scheduleToastDismiss(toastId);
       return;
     }
 
-    abortControllerRef.current?.abort();
+    const toastId = createToastId();
+    addToast({
+      id: toastId,
+      status: 'uploading',
+      title: '上传中',
+      progress: 0,
+    });
+
     const controller = new AbortController();
-    abortControllerRef.current = controller;
-    setUploadState('uploading');
-    setUploadProgress(0);
-    setUploadFilename(file.name);
-    setUploadMessage('');
+    uploadControllersRef.current.set(toastId, controller);
 
     try {
-      const result = await uploadImage(file, {
+      await uploadImage(file, {
         signal: controller.signal,
-        onProgress: (percent) => setUploadProgress(percent),
+        onProgress: (percent) => {
+          updateToast(toastId, { progress: Math.round(percent) });
+        },
       });
-      setUploadProgress(100);
-      setUploadState('success');
-      setUploadFilename(result.filename);
+      updateToast(toastId, {
+        status: 'success',
+        title: '上传成功',
+        progress: 100,
+      });
+      scheduleToastDismiss(toastId);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
+        removeToast(toastId);
         return;
       }
       const message =
         err instanceof Error ? err.message : '上传失败，请重试';
-      setUploadState('error');
-      setUploadProgress(0);
-      setUploadMessage(message);
+      updateToast(toastId, {
+        status: 'error',
+        title: '上传失败',
+        message,
+      });
+      scheduleToastDismiss(toastId);
+    } finally {
+      uploadControllersRef.current.delete(toastId);
     }
   };
 
@@ -173,7 +228,14 @@ function App() {
 
   useEffect(() => {
     return () => {
-      abortControllerRef.current?.abort();
+      uploadControllersRef.current.forEach((controller) => {
+        controller.abort();
+      });
+      uploadControllersRef.current.clear();
+      toastTimersRef.current.forEach((timer) => {
+        window.clearTimeout(timer);
+      });
+      toastTimersRef.current.clear();
     };
   }, []);
 
@@ -215,14 +277,6 @@ function App() {
     return undefined;
   }, [isResizing]);
 
-  const showProgress =
-    uploadState === 'uploading' || uploadState === 'success';
-  const uploadStatusText =
-    uploadState === 'uploading'
-      ? `上传中 ${uploadProgress}%`
-      : uploadState === 'success'
-        ? `上传成功：${uploadFilename}`
-        : uploadMessage;
   const pageStyle = {
     '--sidebar-width': `${sidebarWidth}px`,
   } as CSSProperties;
@@ -247,6 +301,41 @@ function App() {
           </div>
         </div>
       </div>
+      <div className="toast-container" aria-live="polite">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`toast is-${toast.status}`}
+            role="status"
+          >
+            <div className="toast-row">
+              <span className="toast-title">{toast.title}</span>
+              {toast.status === 'uploading' && (
+                <span className="toast-percent">
+                  {toast.progress ?? 0}%
+                </span>
+              )}
+            </div>
+            {toast.status === 'uploading' && (
+              <div
+                className="toast-progress"
+                role="progressbar"
+                aria-valuenow={toast.progress ?? 0}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className="toast-progress-bar"
+                  style={{ width: `${toast.progress ?? 0}%` }}
+                />
+              </div>
+            )}
+            {toast.status === 'error' && toast.message && (
+              <div className="toast-message">{toast.message}</div>
+            )}
+          </div>
+        ))}
+      </div>
       <div className="layout">
         <aside
           className={`sidebar${isResizing ? ' is-resizing' : ''}`}
@@ -260,38 +349,7 @@ function App() {
             aria-hidden="true"
           />
           <section className="upload-zone">
-            <div className="upload-zone-inner">
-              {uploadState !== 'idle' && (
-                <div className="upload-feedback" aria-live="polite">
-                  {showProgress && (
-                    <div
-                      className="upload-progress"
-                      role="progressbar"
-                      aria-valuenow={uploadProgress}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                    >
-                      <div
-                        className="upload-progress-bar"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  )}
-                  <p className={`upload-status ${uploadState}`}>
-                    {uploadStatusText}
-                  </p>
-                  {uploadState === 'success' && (
-                    <button
-                      type="button"
-                      className="upload-reset"
-                      onClick={resetUploadState}
-                    >
-                      继续上传
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+            <div className="upload-zone-inner" />
           </section>
           <div className="sidebar-footer">
             <input
