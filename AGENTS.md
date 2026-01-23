@@ -265,7 +265,34 @@ psql "$DATABASE_URL" -c "SELECT * FROM projects LIMIT 10;"
    - `(cd "$WT/apps/editor" && pnpm build)` 或/且 `(cd "$WT/apps/server" && pnpm build)`
 4) 涉及模板 / codegen / 导出流程：必须跑一次导出冒烟并记录结果
 
+## 14. 📐 ER Diagram（Mermaid）生成与存档规范
 
-## 14. 启动前后端的端口释放要求
+### 14.1 输出与文件存档
+- **ER Diagram 要求**：必须使用 Mermaid 的 `erDiagram` 语法。
+- 若未特别指明需要生成并保存 ER 图的路径，则默认将简报保存在 `docs/ER_Diagram/YYYYMMDD/` 目录中（`YYYYMMDD` 为生成当日日期）。
+- 系统生成：`TID = T<yymmddHHMM>`（以生成当刻的本地时间为准）。
+- 默认简报文件名：`<TID>_ER_Diagram.md`。
+- 默认在**同一份简报**中输出 **4 张 ER 图**（除非用户明确要求只要其中一张，或明确要求拆分为多个文件）：
+  1) **ER-ALL（统一）**：前端 + 后端 + 数据库合并视角的“端到端数据结构”（以领域/DB 为骨架，补 FE/BE 映射）。
+  2) **ER-FE（前端）**：仅前端编辑器的数据结构（EditorState / IR / DTO 等）。
+  3) **ER-BE（后端）**：仅后端 NestJS 的数据结构（Domain/Entity/DTO/Service 对象等）。
+  4) **ER-DB（数据库）**：仅数据库表结构（Prisma/SQL：PK/FK/字段类型）。
+
+### 14.2 建模口径（避免混乱）
+- ER 图用于“数据结构与关系”，**不画 UI 组件树**。
+- **ER-DB**：只画持久化表（主键/外键/关键字段/类型），不要把运行时临时变量画进去。
+- **ER-FE**：画“前端状态/IR/缓存结构”，例如 `ProjectDraft`、`AssetLibrary`、`EditorSelection`、`Node` 等；字段以 TypeScript 语义为准。
+- **ER-BE**：画“后端领域与传输结构”，例如 `Project`、`Asset`、`ExportRun`、DTO；避免把 Controller 路由当实体。
+- **ER-ALL**：以 DB/领域关系为主干，标注 FE/BE 的关键字段映射点（例如 `ProjectIR` ↔ `projects.content_json`，`Asset` ↔ `assets.path`）。
+- 对任何不确定的字段/关系，必须在图下追加 **Assumptions**（列出假设与待确认点），避免误导。
+
+### 14.3 目录与命名示例
+- `docs/ER_Diagram/20260123/T2601231520_ER_Diagram.md`
+- 同一简报内按小节组织：`ER-ALL` / `ER-FE` / `ER-BE` / `ER-DB`，每张图一个独立的 ` ```mermaid ` 块。
+
+---
+
+## 15. 启动前后端的端口释放要求
 
 - 启动前后端服务前，若端口已被占用，必须先关闭占用进程，再启动对应服务。
+
