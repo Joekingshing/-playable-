@@ -5,6 +5,7 @@ import {
   type CSSProperties,
 } from 'react';
 import { downloadExportZip } from './api/export';
+import { listAssets, type AssetItem } from './api/assets';
 import { uploadImage } from './api/upload';
 import './App.css';
 
@@ -24,15 +25,20 @@ const TOAST_DISMISS_DELAY = 2000;
 
 function App() {
   const [exporting, setExporting] = useState(false);
+  const [assets, setAssets] = useState<AssetItem[]>([]);
+  const [selectedFilename, setSelectedFilename] = useState<string | null>(null);
   const [toasts, setToasts] = useState<UploadToast[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const assetListRef = useRef<HTMLDivElement | null>(null);
+  const assetItemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const toastTimersRef = useRef<Map<string, number>>(new Map());
   const uploadControllersRef = useRef<Map<string, AbortController>>(
     new Map(),
   );
+  const hasInitialScrollRef = useRef(false);
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(
     null,
   );
@@ -81,6 +87,19 @@ function App() {
     toastTimersRef.current.set(id, timer);
   };
 
+  const loadAssets = async (options?: { selectFilename?: string }) => {
+    try {
+      const response = await listAssets();
+      const sorted = [...response.items].sort((a, b) => a.mtime - b.mtime);
+      setAssets(sorted);
+      if (options?.selectFilename) {
+        setSelectedFilename(options.selectFilename);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const clampSidebarWidth = (value: number) =>
     Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, value));
 
@@ -121,9 +140,8 @@ function App() {
     uploadControllersRef.current.set(uploadId, controller);
 
     try {
-      await uploadImage(file, {
-        signal: controller.signal,
-      });
+      const result = await uploadImage(file, { signal: controller.signal });
+      await loadAssets({ selectFilename: result.filename });
       const toastId = createToastId();
       addToast({
         id: toastId,
@@ -218,6 +236,29 @@ function App() {
   }, []);
 
   useEffect(() => {
+    void loadAssets();
+  }, []);
+
+  useEffect(() => {
+    const list = assetListRef.current;
+    if (!list) {
+      return;
+    }
+    if (selectedFilename) {
+      const item = assetItemRefs.current.get(selectedFilename);
+      if (item) {
+        item.scrollIntoView({ block: 'nearest' });
+      }
+      return;
+    }
+
+    if (!hasInitialScrollRef.current) {
+      list.scrollTop = list.scrollHeight;
+      hasInitialScrollRef.current = true;
+    }
+  }, [assets, selectedFilename]);
+
+  useEffect(() => {
     if (!isResizing) {
       return;
     }
@@ -258,6 +299,19 @@ function App() {
   const pageStyle = {
     '--sidebar-width': `${sidebarWidth}px`,
   } as CSSProperties;
+
+  const handleAssetSelect = (filename: string) => {
+    setSelectedFilename(filename);
+  };
+
+  const registerAssetRef =
+    (filename: string) => (node: HTMLButtonElement | null) => {
+      if (node) {
+        assetItemRefs.current.set(filename, node);
+      } else {
+        assetItemRefs.current.delete(filename);
+      }
+    };
 
   return (
     <div className="page" style={pageStyle}>
@@ -303,7 +357,28 @@ function App() {
             aria-hidden="true"
           />
           <section className="upload-zone">
-            <div className="upload-zone-inner" />
+            <div className="asset-list" ref={assetListRef}>
+              {assets.map((asset) => (
+                <button
+                  key={asset.filename}
+                  ref={registerAssetRef(asset.filename)}
+                  type="button"
+                  className={`asset-card${
+                    asset.filename === selectedFilename
+                      ? ' is-selected'
+                      : ''
+                  }`}
+                  onClick={() => handleAssetSelect(asset.filename)}
+                >
+                  <img
+                    className="asset-thumb"
+                    src={asset.url}
+                    alt={asset.filename}
+                    loading="lazy"
+                  />
+                </button>
+              ))}
+            </div>
           </section>
           <div className="sidebar-footer">
             <input
