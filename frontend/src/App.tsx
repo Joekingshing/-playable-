@@ -64,6 +64,9 @@ function App() {
     return Array.from(dataTransfer.types).includes('Files');
   };
 
+  const hasDroppedFiles = (event: React.DragEvent<HTMLElement>) =>
+    event.dataTransfer?.files && event.dataTransfer.files.length > 0;
+
   const createToastId = () =>
     `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -176,6 +179,9 @@ function App() {
   };
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!hasDroppedFiles(event)) {
+      return;
+    }
     if (!isFileDrag(event)) {
       return;
     }
@@ -184,6 +190,9 @@ function App() {
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!hasDroppedFiles(event)) {
+      return;
+    }
     if (!isFileDrag(event)) {
       return;
     }
@@ -202,6 +211,9 @@ function App() {
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!hasDroppedFiles(event)) {
+      return;
+    }
     event.preventDefault();
     setDragActive(false);
     const file = event.dataTransfer.files?.[0];
