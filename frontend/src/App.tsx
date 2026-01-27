@@ -23,6 +23,7 @@ const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 420;
 const TOAST_DISMISS_DELAY = 2000;
 const MAX_DRAG_PREVIEW_SIDE = 200;
+const FALLBACK_DRAG_PREVIEW_SIZE = 160;
 
 function App() {
   const [exporting, setExporting] = useState(false);
@@ -35,6 +36,9 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const assetListRef = useRef<HTMLDivElement | null>(null);
   const assetItemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const assetSizeCache = useRef(
+    new Map<string, { width: number; height: number }>(),
+  );
   const toastTimersRef = useRef<Map<string, number>>(new Map());
   const uploadControllersRef = useRef<Map<string, AbortController>>(
     new Map(),
@@ -109,7 +113,10 @@ function App() {
 
   const getDragPreviewSize = (width: number, height: number) => {
     if (width <= 0 || height <= 0) {
-      return { width: MAX_DRAG_PREVIEW_SIDE, height: MAX_DRAG_PREVIEW_SIDE };
+      return {
+        width: FALLBACK_DRAG_PREVIEW_SIZE,
+        height: FALLBACK_DRAG_PREVIEW_SIZE,
+      };
     }
 
     if (width <= MAX_DRAG_PREVIEW_SIDE && height <= MAX_DRAG_PREVIEW_SIDE) {
@@ -139,8 +146,11 @@ function App() {
       const imgElement = event.currentTarget.querySelector(
         'img',
       ) as HTMLImageElement | null;
-      const naturalWidth = imgElement?.naturalWidth ?? 0;
-      const naturalHeight = imgElement?.naturalHeight ?? 0;
+      const cachedSize = assetSizeCache.current.get(asset.filename);
+      const naturalWidth =
+        imgElement?.naturalWidth ?? cachedSize?.width ?? 0;
+      const naturalHeight =
+        imgElement?.naturalHeight ?? cachedSize?.height ?? 0;
       const { width, height } = getDragPreviewSize(
         naturalWidth,
         naturalHeight,
@@ -311,6 +321,22 @@ function App() {
   useEffect(() => {
     void loadAssets();
   }, []);
+
+  useEffect(() => {
+    assets.forEach((asset) => {
+      if (assetSizeCache.current.has(asset.filename)) {
+        return;
+      }
+      const preload = new Image();
+      preload.src = asset.url;
+      preload.onload = () => {
+        assetSizeCache.current.set(asset.filename, {
+          width: preload.naturalWidth,
+          height: preload.naturalHeight,
+        });
+      };
+    });
+  }, [assets]);
 
   useEffect(() => {
     const list = assetListRef.current;
