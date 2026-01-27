@@ -41,6 +41,7 @@ function App() {
   const assetSizeCache = useRef(
     new Map<string, { width: number; height: number }>(),
   );
+  const internalDragRef = useRef(false);
   const dragCounterRef = useRef(0);
   const toastTimersRef = useRef<Map<string, number>>(new Map());
   const uploadControllersRef = useRef<Map<string, AbortController>>(
@@ -79,7 +80,7 @@ function App() {
     event.dataTransfer?.getData(INTERNAL_ASSET_MIME) ?? '';
 
   const isInternalDrag = (event: React.DragEvent<HTMLElement>) =>
-    Boolean(getInternalDragData(event));
+    Boolean(getInternalDragData(event)) || internalDragRef.current;
 
   const hasExternalFileCandidate = (event: React.DragEvent<HTMLElement>) => {
     if (isInternalDrag(event)) {
@@ -95,6 +96,11 @@ function App() {
       return Array.from(dataTransfer.items).some(
         (item) => item.kind === 'file',
       );
+    }
+
+    const types = Array.from(dataTransfer.types ?? []);
+    if (types.includes('Files') || types.includes('public.file-url')) {
+      return true;
     }
 
     return Boolean(dataTransfer.files && dataTransfer.files.length > 0);
@@ -216,10 +222,14 @@ function App() {
         INTERNAL_ASSET_MIME,
         JSON.stringify({ filename: asset.filename, url: asset.url }),
       );
+      internalDragRef.current = true;
 
       event.currentTarget.addEventListener(
         'dragend',
-        () => dragImage.remove(),
+        () => {
+          dragImage.remove();
+          internalDragRef.current = false;
+        },
         { once: true },
       );
     };
@@ -343,6 +353,7 @@ function App() {
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    internalDragRef.current = false;
     dragCounterRef.current = 0;
     if (isInternalDrag(event)) {
       event.preventDefault();
