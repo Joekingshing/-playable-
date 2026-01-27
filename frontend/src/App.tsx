@@ -41,6 +41,7 @@ function App() {
   const assetSizeCache = useRef(
     new Map<string, { width: number; height: number }>(),
   );
+  const dragCounterRef = useRef(0);
   const toastTimersRef = useRef<Map<string, number>>(new Map());
   const uploadControllersRef = useRef<Map<string, AbortController>>(
     new Map(),
@@ -96,8 +97,7 @@ function App() {
       );
     }
 
-    const types = Array.from(dataTransfer.types ?? []);
-    return types.includes('Files') || types.includes('public.file-url');
+    return Boolean(dataTransfer.files && dataTransfer.files.length > 0);
   };
 
   const isAcceptedImageFile = (file: File) => {
@@ -298,6 +298,8 @@ function App() {
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
     if (isInternalDrag(event)) {
+      event.preventDefault();
+      dragCounterRef.current = 0;
       setDragActive(false);
       return;
     }
@@ -305,11 +307,14 @@ function App() {
       return;
     }
     event.preventDefault();
+    dragCounterRef.current += 1;
     setDragActive(true);
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     if (isInternalDrag(event)) {
+      event.preventDefault();
+      dragCounterRef.current = 0;
       setDragActive(false);
       return;
     }
@@ -323,14 +328,22 @@ function App() {
 
   const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const relatedTarget = event.relatedTarget as Node | null;
-    if (relatedTarget && event.currentTarget.contains(relatedTarget)) {
+    if (isInternalDrag(event)) {
+      dragCounterRef.current = 0;
+      setDragActive(false);
       return;
     }
-    setDragActive(false);
+    if (dragCounterRef.current === 0) {
+      return;
+    }
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) {
+      setDragActive(false);
+    }
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    dragCounterRef.current = 0;
     if (isInternalDrag(event)) {
       event.preventDefault();
       setDragActive(false);
