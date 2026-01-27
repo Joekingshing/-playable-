@@ -246,9 +246,6 @@ function App() {
   };
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
-    if (!hasDroppedFiles(event)) {
-      return;
-    }
     if (!isFileDrag(event)) {
       return;
     }
@@ -257,9 +254,6 @@ function App() {
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    if (!hasDroppedFiles(event)) {
-      return;
-    }
     if (!isFileDrag(event)) {
       return;
     }
