@@ -24,6 +24,8 @@ const MAX_SIDEBAR_WIDTH = 420;
 const TOAST_DISMISS_DELAY = 2000;
 const MAX_DRAG_PREVIEW_SIDE = 200;
 const FALLBACK_DRAG_PREVIEW_SIZE = 160;
+const INTERNAL_ASSET_MIME = 'application/x-asset';
+const ACCEPTED_IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'];
 
 function App() {
   const [exporting, setExporting] = useState(false);
@@ -71,6 +73,41 @@ function App() {
 
   const hasDroppedFiles = (event: React.DragEvent<HTMLElement>) =>
     event.dataTransfer?.files && event.dataTransfer.files.length > 0;
+
+  const getInternalDragData = (event: React.DragEvent<HTMLElement>) =>
+    event.dataTransfer?.getData(INTERNAL_ASSET_MIME) ?? '';
+
+  const isInternalDrag = (event: React.DragEvent<HTMLElement>) =>
+    Boolean(getInternalDragData(event));
+
+  const hasExternalFileCandidate = (event: React.DragEvent<HTMLElement>) => {
+    if (isInternalDrag(event)) {
+      return false;
+    }
+
+    const dataTransfer = event.dataTransfer;
+    if (!dataTransfer) {
+      return false;
+    }
+
+    if (dataTransfer.items && dataTransfer.items.length > 0) {
+      return Array.from(dataTransfer.items).some(
+        (item) => item.kind === 'file',
+      );
+    }
+
+    const types = Array.from(dataTransfer.types ?? []);
+    return types.includes('Files') || types.includes('public.file-url');
+  };
+
+  const isAcceptedImageFile = (file: File) => {
+    if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      return true;
+    }
+
+    const lowerName = file.name.toLowerCase();
+    return ACCEPTED_IMAGE_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+  };
 
   const createToastId = () =>
     `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -175,6 +212,10 @@ function App() {
         Math.floor(width / 2),
         Math.floor(height / 2),
       );
+      dataTransfer.setData(
+        INTERNAL_ASSET_MIME,
+        JSON.stringify({ filename: asset.filename, url: asset.url }),
+      );
 
       event.currentTarget.addEventListener(
         'dragend',
@@ -256,7 +297,11 @@ function App() {
   };
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
-    if (!isFileDrag(event)) {
+    if (isInternalDrag(event)) {
+      setDragActive(false);
+      return;
+    }
+    if (!hasExternalFileCandidate(event) || !isFileDrag(event)) {
       return;
     }
     event.preventDefault();
@@ -264,7 +309,11 @@ function App() {
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    if (!isFileDrag(event)) {
+    if (isInternalDrag(event)) {
+      setDragActive(false);
+      return;
+    }
+    if (!hasExternalFileCandidate(event) || !isFileDrag(event)) {
       return;
     }
     event.preventDefault();
@@ -282,12 +331,25 @@ function App() {
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    if (isInternalDrag(event)) {
+      event.preventDefault();
+      setDragActive(false);
+      return;
+    }
+    if (hasExternalFileCandidate(event)) {
+      event.preventDefault();
+    }
     if (!hasDroppedFiles(event)) {
       return;
     }
-    event.preventDefault();
     setDragActive(false);
     const file = event.dataTransfer.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (!isAcceptedImageFile(file)) {
+      return;
+    }
     handleFile(file);
   };
 
