@@ -22,6 +22,7 @@ const DEFAULT_SIDEBAR_WIDTH = 260;
 const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 420;
 const TOAST_DISMISS_DELAY = 2000;
+const MAX_DRAG_PREVIEW_SIDE = 200;
 
 function App() {
   const [exporting, setExporting] = useState(false);
@@ -105,6 +106,72 @@ function App() {
 
   const clampSidebarWidth = (value: number) =>
     Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, value));
+
+  const getDragPreviewSize = (width: number, height: number) => {
+    if (width <= 0 || height <= 0) {
+      return { width: MAX_DRAG_PREVIEW_SIDE, height: MAX_DRAG_PREVIEW_SIDE };
+    }
+
+    if (width <= MAX_DRAG_PREVIEW_SIDE && height <= MAX_DRAG_PREVIEW_SIDE) {
+      return { width, height };
+    }
+
+    if (width > height) {
+      return {
+        width: MAX_DRAG_PREVIEW_SIDE,
+        height: Math.round(MAX_DRAG_PREVIEW_SIDE * (height / width)),
+      };
+    }
+
+    return {
+      width: Math.round(MAX_DRAG_PREVIEW_SIDE * (width / height)),
+      height: MAX_DRAG_PREVIEW_SIDE,
+    };
+  };
+
+  const handleAssetDragStart =
+    (asset: AssetItem) => (event: React.DragEvent<HTMLButtonElement>) => {
+      const { dataTransfer } = event;
+      if (!dataTransfer) {
+        return;
+      }
+
+      const imgElement = event.currentTarget.querySelector(
+        'img',
+      ) as HTMLImageElement | null;
+      const naturalWidth = imgElement?.naturalWidth ?? 0;
+      const naturalHeight = imgElement?.naturalHeight ?? 0;
+      const { width, height } = getDragPreviewSize(
+        naturalWidth,
+        naturalHeight,
+      );
+
+      const dragImage = new Image();
+      dragImage.src = imgElement?.currentSrc ?? asset.url;
+      dragImage.width = width;
+      dragImage.height = height;
+      dragImage.style.width = `${width}px`;
+      dragImage.style.height = `${height}px`;
+      dragImage.style.objectFit = 'contain';
+      dragImage.style.position = 'fixed';
+      dragImage.style.left = '-10000px';
+      dragImage.style.top = '-10000px';
+      dragImage.style.pointerEvents = 'none';
+      dragImage.style.background = 'transparent';
+
+      document.body.appendChild(dragImage);
+      dataTransfer.setDragImage(
+        dragImage,
+        Math.floor(width / 2),
+        Math.floor(height / 2),
+      );
+
+      event.currentTarget.addEventListener(
+        'dragend',
+        () => dragImage.remove(),
+        { once: true },
+      );
+    };
 
   const handleExport = async () => {
     if (exporting) {
@@ -381,6 +448,7 @@ function App() {
                       : ''
                   }`}
                   onClick={() => handleAssetSelect(asset.filename)}
+                  onDragStart={handleAssetDragStart(asset)}
                 >
                   <img
                     className="asset-thumb"
